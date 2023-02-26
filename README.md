@@ -4,7 +4,7 @@
 
 > 🐍 For Python 3.10+
 
-## No boilerplate, _async_ and _typed_ Gmail access. 😋
+## No boilerplate, *async* and *typed* Gmail access. 😋
 
 ```shell
 pip install slygmail
@@ -27,7 +27,7 @@ import asyncio
 from SlyGmail import *
 
 async def main():
-    gmail = Gmail('test/app.json', 'test/user.json', Scope.GmailSend)
+    gmail = Gmail(OAuth2('test/app.json', 'test/user.json'))
 
     await gmail.send('person@example.com', 'test subject', 'test body')
 

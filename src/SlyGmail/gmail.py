@@ -1,3 +1,6 @@
+"""
+GMail API and types
+"""
 from dataclasses import dataclass
 import os.path
 
@@ -7,7 +10,6 @@ from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import mimetypes
-from typing import cast
 
 import aiofiles
 
@@ -18,13 +20,31 @@ class Scope:
     GMailSend     = 'https://www.googleapis.com/auth/gmail.send'
     GMailReadOnly = 'https://www.googleapis.com/auth/gmail.readonly'
 
-MIME_TYPES = {
-    'text': MIMEText,
-    'image': MIMEImage,
-    'audio': MIMEAudio
-}
-
 EMAIL_HEADERS = {'Content-Type': 'message/rfc822'}
+
+def _encode_attachment(content: bytes, filename: str):
+    content_type, encoding = mimetypes.guess_type(filename)
+    # gmail does not like attaching .zip file names
+    # filename should not include any path
+    filename = os.path.split(filename)[1].replace('.zip', '.zip.attachment')
+    if content_type is None or encoding is not None:
+        content_type = 'application/octet-stream'
+    main_type, sub_type = content_type.split('/', 1)
+
+    match main_type:
+        case 'text':
+            msg = MIMEText(str(content, encoding='utf8'), sub_type)
+        case 'image':
+            msg = MIMEImage(content, sub_type)
+        case 'audio':
+            msg = MIMEAudio(content, sub_type)
+        case _:
+            msg = MIMEBase(main_type, sub_type)
+            msg.set_payload(content)
+
+    msg.add_header('Content-Disposition', 'attachment', filename=filename)
+
+    return msg
 
 @dataclass
 class Email:
@@ -32,7 +52,7 @@ class Email:
     sender: str
     subject: str
     body: str
-    attachments: list[str] # filepath
+    attachments: list[str|tuple[bytes, str]] # filepath | (content, filename)
 
     async def encoded(self) -> str:
 
@@ -49,48 +69,30 @@ class Email:
 
             message.attach(MIMEText(self.body))
 
-            for path in self.attachments:
-                # convert to MIME object based on path
-                content_type, encoding = mimetypes.guess_type(path)
-                if content_type is None or encoding is not None:
-                    content_type = 'application/octet-stream'
-                main_type, sub_type = content_type.split('/', 1)
-
-                async with aiofiles.open(path, 'rb') as f:
-                    if main_type == 'text':
-                        msg = MIMEText(str(await f.read(), encoding='utf8'), sub_type)
-                    elif main_type in ['image', 'audio']:
-                        mime_t = cast(type[MIMEImage] | type[MIMEAudio], MIME_TYPES[main_type])
-                        msg = mime_t(await f.read(), sub_type)
-                    else:
-                        msg = MIMEBase(main_type, sub_type)
-                        msg.set_payload(await f.read())
+            for attachment in self.attachments:
                 
-                # gmail does not like attaching .zip file names
-                filename = os.path.split(path)[1].replace('.zip', '.zip.attachment')
+                if isinstance(attachment, tuple):
+                    content, filename = attachment
+                else:
+                    async with aiofiles.open(attachment, 'rb') as f:
+                        content = await f.read()
+                    filename = attachment
 
-                msg.add_header('Content-Disposition', 'attachment', filename=filename)
+                msg = _encode_attachment(content, filename)
+
                 message.attach(msg)
 
         return message.as_string()
 
 
 class Gmail(WebAPI):
-    base_url = "https://gmail.googleapis.com/upload/gmail/v1"
+    """Gmail API Client"""
+    base_url = "https://gmail.googleapis.com/upload/gmail/v1/"
 
-    def __init__(self, app: str | OAuth2, user: str | OAuth2User, scope: str):
-        if isinstance(user, str):
-            user = OAuth2User(user)
-
-        if isinstance(app, str):
-            auth = OAuth2(app, user)
-        else:
-            auth = app
-            auth.user = user
+    def __init__(self, auth: OAuth2):
         super().__init__(auth)
-        auth.verify_scope(scope)
 
-    async def send(self, to: str, subject: str, body: str, attachments: list[str] | None = None, from_email: str='me'):
+    async def send(self, to: str, subject: str, body: str, attachments: list[str|tuple[bytes, str]] | None = None, from_email: str='me'):
         if attachments is None:
             attachments = []
         email = Email(to, from_email, subject, body, attachments)
@@ -105,8 +107,8 @@ class Gmail(WebAPI):
         else:
             params = {}
         
-        return await self.post_json(
-            F"/users/{email.sender}/messages/send",
+        return await self.post_form(
+            F"users/{email.sender}/messages/send",
             params, data=data, headers=EMAIL_HEADERS
             )
 
