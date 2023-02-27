@@ -9,7 +9,10 @@ async def main(args: list[str]):
         case ['grant']:
             await grant_wizard(Scope, kind='OAuth2')
         case ['scaffold']:
-            scaffold_wizard(kind='OAuth2')
+            scaffold_wizard(kind='OAuth2', override={
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth"
+            })
         case _: # help
             print(inspect.cleandoc("""
             SlyGmail command line: tool for Gmail OAuth2.
