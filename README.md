@@ -1,5 +1,7 @@
 # ![sly logo](https://raw.githubusercontent.com/dunkyl/SlyMeta/main/sly%20logo%20py.svg) Sly Gmail for Python
 
+<!-- elevator begin -->
+
 > 🚧 **This library is an early work in progress! Breaking changes may be frequent.**
 
 > 🐍 For Python 3.10+
@@ -17,6 +19,8 @@ Currently, the following topics are supported:
 * Sending emails with attachments
 
 You can directly grant user tokens using the command line, covering the whole OAuth 2 grant process.
+
+<!-- elevator end -->
 
 ---
 
