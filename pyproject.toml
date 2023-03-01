@@ -10,7 +10,7 @@ classifiers = [
     "Operating System :: OS Independent"
 ]
 dependencies = [
-    'SlyAPI >= 0.2.3',
+    'SlyAPI >= 0.4.3',
     'aiofiles',
 ]
 [project.optional-dependencies]
