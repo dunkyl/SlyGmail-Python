@@ -4,18 +4,18 @@ from SlyGmail import *
 @pytest.mark.skipif(sys.gettrace() is None, reason="sends real email")
 async def test_readme():
 
-    gmail = Gmail(OAuth2('test/app.json', 'test/user.json'))
+    gmail = Gmail(OAuth2(F'{test_dir}/app.json', F'{test_dir}/user.json'))
 
-    to_email = open('test/test_email.txt').read().strip()
+    to_email = open(F'{test_dir}/test_email.txt').read().strip()
 
-    await gmail.send(to_email, 'test subject', 'test body')
+    await gmail.send(to_email, F'{test_dir} subject', F'{test_dir} body')
 
 @pytest.mark.skipif(sys.gettrace() is None, reason="sends real email")
 async def test_send_attachment():
 
-    gmail = Gmail(OAuth2('test/app.json', 'test/user.json'))
+    gmail = Gmail(OAuth2(F'{test_dir}/app.json', F'{test_dir}/user.json'))
 
-    to_email = open('test/test_email.txt').read().strip()
+    to_email = open(F'{test_dir}/test_email.txt').read().strip()
 
     await gmail.send(to_email, 'My Subject Unto You',
         """
@@ -25,4 +25,4 @@ async def test_send_attachment():
 
             Thanks,
             Me
-        """, ['test/test_attachment.txt'])
+        """, [F'{test_dir}/test_attachment.txt'])
