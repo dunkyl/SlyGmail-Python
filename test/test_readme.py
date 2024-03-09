@@ -1,5 +1,7 @@
-import sys, pytest
+import sys, pytest, os
 from SlyGmail import *
+
+test_dir = os.path.dirname(__file__)
 
 @pytest.mark.skipif(sys.gettrace() is None, reason="sends real email")
 async def test_readme():
