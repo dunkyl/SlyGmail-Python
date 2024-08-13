@@ -10,10 +10,12 @@ from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import mimetypes
+from typing import Any, cast
 
 import aiofiles
 
 from SlyAPI import *
+from aiofiles.threadpool import AsyncFileIO
 
 class Scope:
     GMail         = 'https://mail.google.com/'
@@ -74,7 +76,7 @@ class Email:
                 if isinstance(attachment, tuple):
                     content, filename = attachment
                 else:
-                    async with aiofiles.open(attachment, 'rb') as f:
+                    async with cast(Any, aiofiles.open(attachment, 'rb')) as f: 
                         content = await f.read()
                     filename = attachment
 
